@@ -50,6 +50,7 @@ class Istari implements Session, vscode.Disposable {
         this.provider = new ListingProvider(() => this.current, () => ({
             sourceText: config().get<boolean>('listing.sourceText', true),
             sourceLine: (file, line) => this.sources.line(file, line),
+            displayPath: file => vscode.workspace.asRelativePath(file),
         }));
         this.follow = new Follow(() => this.current, this.provider, this.highlighter);
 

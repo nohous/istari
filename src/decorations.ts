@@ -112,8 +112,11 @@ function escapeMd(s: string): string {
 export class Highlighter implements vscode.Disposable {
     private readonly type = vscode.window.createTextEditorDecorationType({
         isWholeLine: true,
-        backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
-        overviewRulerColor: new vscode.ThemeColor('editorOverviewRuler.findMatchForeground'),
+        backgroundColor: new vscode.ThemeColor('istari.markBackground'),
+        borderColor: new vscode.ThemeColor('istari.markBorder'),
+        borderStyle: 'solid',
+        borderWidth: '0 0 0 2px',
+        overviewRulerColor: new vscode.ThemeColor('istari.markBorder'),
         overviewRulerLane: vscode.OverviewRulerLane.Full,
     });
     private readonly marked = new Set<vscode.TextEditor>();

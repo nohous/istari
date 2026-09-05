@@ -59,6 +59,28 @@
         "path": "./syntaxes/istari-asm.tmLanguage.json"
       }
     ],
+    "colors": [
+      {
+        "id": "istari.markBackground",
+        "description": "Background of the lines that correspond to the cursor line in the other editor.",
+        "defaults": {
+          "dark": "#e0a82e1f",
+          "light": "#c58a002e",
+          "highContrast": "#e0a82e40",
+          "highContrastLight": "#c58a0050"
+        }
+      },
+      {
+        "id": "istari.markBorder",
+        "description": "Left border and overview ruler colour of the marked lines.",
+        "defaults": {
+          "dark": "#e0a82e",
+          "light": "#a67300",
+          "highContrast": "#ffd75e",
+          "highContrastLight": "#7a5500"
+        }
+      }
+    ],
     "commands": [
       {
         "command": "istari.openFunction",

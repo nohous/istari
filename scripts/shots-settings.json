@@ -1,0 +1,22 @@
+{
+    "window.newWindowDimensions": "fullscreen",
+    "window.commandCenter": false,
+    "window.menuBarVisibility": "hidden",
+    "workbench.layoutControl.enabled": false,
+    "workbench.activityBar.location": "hidden",
+    "workbench.startupEditor": "none",
+    "workbench.editor.showTabs": "single",
+    "workbench.tips.enabled": false,
+    "editor.minimap.enabled": false,
+    "editor.fontSize": 15,
+    "editor.lineHeight": 22,
+    "editor.renderLineHighlight": "none",
+    "editor.glyphMargin": false,
+    "breadcrumbs.enabled": false,
+    "update.mode": "none",
+    "telemetry.telemetryLevel": "off",
+    "extensions.ignoreRecommendations": true,
+    "git.enabled": false,
+    "workbench.secondarySideBar.defaultVisibility": "hidden",
+    "chat.commandCenter.enabled": false
+}

@@ -2,6 +2,10 @@
 
 Source-to-assembly navigation over a linked ELF, inside VS Code.
 
+![A source file with byte costs beside a function listing whose marked lines belong to the cursor line](images/listing.png)
+
+![Costs in the source, the listing beside it, the cheat sheet on a mnemonic, the cost hover on a destructor, the function picker](images/istari.gif)
+
 Istari reads the ELF you actually flash, with the inlining and dead-stripping
 the linker settled, and puts the result next to your source:
 
@@ -72,6 +76,10 @@ pnpm run compile
 pnpm run test:unit        # parser and model, plus the WPX image when present
 xvfb-run -a pnpm test     # extension host against the WPX workspace
 ```
+
+The README images come from `scripts/readme-media.sh`, which drives the
+extension in a headless VS Code on the same workspace and needs xvfb-run,
+ImageMagick, ffmpeg and xdotool.
 
 Live testing: run the "Istari on WPX" launch configuration (F5), or from a
 shell:

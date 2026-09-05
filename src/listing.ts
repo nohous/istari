@@ -30,6 +30,7 @@ export interface Listing {
 export interface ListingOptions {
     sourceText: boolean;
     sourceLine: (file: string, line: number) => string | undefined;
+    displayPath?: (file: string) => string;
 }
 
 const NONE: ListingLine = { instr: -1, loc: -1, scope: -1, chain: -1 };
@@ -44,7 +45,7 @@ export function renderListing(image: Image, fnIdx: number, opts: ListingOptions)
         lines.push(line);
     };
 
-    const where = fn.loc >= 0 ? `  ${locText(image, fn.loc)}` : '';
+    const where = fn.loc >= 0 ? `  ${locText(image, fn.loc, opts.displayPath)}` : '';
     push(`;; ${fn.name}`, NONE);
     push(`;; ${path.basename(image.path)}  ${hex(fn.addr)}  ${fn.size} bytes${where}`, NONE);
     push('', NONE);
@@ -101,9 +102,9 @@ function locShort(image: Image, locIdx: number, prevFile: number): string {
     return `${file}:${loc.line}`;
 }
 
-export function locText(image: Image, locIdx: number): string {
+export function locText(image: Image, locIdx: number, displayPath: (file: string) => string = f => f): string {
     const loc = image.locs[locIdx];
-    return `${image.files[loc.file]}:${loc.line}`;
+    return `${displayPath(image.files[loc.file])}:${loc.line}`;
 }
 
 export function hex(addr: number): string {

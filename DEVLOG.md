@@ -129,6 +129,17 @@ fall behind the code it is meant to explain.
 Keybinding is Ctrl+Alt+A; Ctrl+Shift+A collided with the user's vim plugin.
 The old ELF Source View extension was uninstalled.
 
+### README media
+
+The frames are captured, not staged: a mocha suite under the screenshots
+label drives the extension in a headless VS Code on the WPX workspace and
+grabs the Xvfb framebuffer after each step, and ffmpeg assembles the GIF with
+a per-file palette. Three traps on the way: Electron follows WAYLAND_DISPLAY
+and opened on the desktop until the capture forced X11; the per-user inotify
+instance limit of 128 was exhausted by the desktop session and had to be
+raised before a second VS Code could start; hovers opened from the keyboard
+outlive focus changes and need an Escape keypress.
+
 ### Ideas, ranked
 
 1. Build diff. Two images (build vs build-base, which already exists in the
