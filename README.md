@@ -28,6 +28,14 @@ the linker settled, and puts the result next to your source:
   "Istari: Open Instruction Cheat Sheet" renders the whole table. ARM
   Thumb-2 (Cortex-M) is covered.
 
+## Install
+
+From the VS Code Marketplace once it is listed there, or from a release:
+
+```
+code --install-extension istari-0.1.0.vsix
+```
+
 ## Requirements
 
 GNU binutils for the target on PATH: `arm-none-eabi-objdump` for ARM images,

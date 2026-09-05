@@ -1,7 +1,7 @@
 .vscode/**
 .vscode-test/**
-out/test/**
-out/unit/**
+out/**
+!out/extension.js
 node_modules/**
 src/**
 .gitignore
@@ -15,3 +15,4 @@ DEVLOG.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+*.vsix
