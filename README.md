@@ -38,7 +38,7 @@ the linker settled, and puts the result next to your source:
 From the VS Code Marketplace once it is listed there, or from a release:
 
 ```
-code --install-extension istari-elf-0.1.0.vsix
+code --install-extension istari-elf-0.2.0.vsix
 ```
 
 ## Requirements

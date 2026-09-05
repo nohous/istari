@@ -2,7 +2,7 @@
   "name": "istari-elf",
   "displayName": "Istari: ELF Disassembly and Code Size",
   "description": "Compiler Explorer for the linked ELF: each function's disassembly beside its C/C++ source, inline chains, flash cost per source line. GNU objdump backed, ARM Cortex-M cheat sheet built in.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "nohous",
   "license": "MIT",
   "repository": {
