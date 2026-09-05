@@ -7,7 +7,14 @@ import * as vscode from 'vscode';
 import { Image, LineCost } from './image';
 import { shortName } from './listing';
 
-export type CostMode = 'inclusive' | 'exclusive' | 'off';
+export type CostMetric = 'inclusive' | 'exclusive';
+export type CostStyle = 'inline' | 'inlayHint' | 'gutter';
+
+export interface CostOptions {
+    show: boolean;
+    metric: CostMetric;
+    style: CostStyle;
+}
 
 const LEVEL_COLORS = [
     'editorCodeLens.foreground',
@@ -16,43 +23,121 @@ const LEVEL_COLORS = [
     'editorError.foreground',
 ];
 
+const GUTTER_COLORS = ['#6b7585', '#3794ff', '#cca700', '#f14c4c'];
+
 const LEVEL_LIMITS = [8, 32, 128];
 
+interface CostEntry {
+    line: number;
+    bytes: number;
+    level: number;
+    loc: number;
+    cost: LineCost;
+}
+
+/**
+ * @brief Costs of the lines of a file that produced code, in document order.
+ */
+export function costEntries(image: Image, file: number, metric: CostMetric, lineCount: number): CostEntry[] {
+    const out: CostEntry[] = [];
+
+    for (const [line, loc] of image.linesOf(file)) {
+        const cost = image.costOf(loc);
+        const bytes = cost ? (metric === 'inclusive' ? cost.inclusive : cost.exclusive) : 0;
+        if (bytes > 0 && line <= lineCount) {
+            out.push({ line, bytes, level: levelOf(bytes), loc, cost: cost! });
+        }
+    }
+
+    return out.sort((a, b) => a.line - b.line);
+}
+
 export class CostDecorator implements vscode.Disposable {
-    private readonly levels = LEVEL_COLORS.map(color => vscode.window.createTextEditorDecorationType({
+    private readonly inline = LEVEL_COLORS.map(color => vscode.window.createTextEditorDecorationType({
         after: {
             margin: '0 0 0 3em',
             color: new vscode.ThemeColor(color),
         },
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
     }));
+    private readonly gutter = GUTTER_COLORS.map(color => vscode.window.createTextEditorDecorationType({
+        gutterIconPath: gutterIcon(color),
+        gutterIconSize: 'contain',
+    }));
 
-    apply(editor: vscode.TextEditor, image: Image | undefined, mode: CostMode): void {
-        const buckets: vscode.DecorationOptions[][] = this.levels.map(() => []);
-        const file = image && mode !== 'off' ? image.findFile(editor.document.uri.fsPath) : -1;
+    apply(editor: vscode.TextEditor, image: Image | undefined, options: CostOptions): void {
+        const inline: vscode.DecorationOptions[][] = this.inline.map(() => []);
+        const gutter: vscode.DecorationOptions[][] = this.gutter.map(() => []);
+        const file = image && options.show ? image.findFile(editor.document.uri.fsPath) : -1;
 
         if (image && file >= 0) {
-            for (const [line, loc] of image.linesOf(file)) {
-                const cost = image.costOf(loc);
-                const bytes = cost ? (mode === 'inclusive' ? cost.inclusive : cost.exclusive) : 0;
-                if (bytes <= 0 || line > editor.document.lineCount) {
-                    continue;
+            for (const entry of costEntries(image, file, options.metric, editor.document.lineCount)) {
+                const range = editor.document.lineAt(entry.line - 1).range;
+                const hoverMessage = costHover(image, entry.loc, entry.cost);
+                if (options.style === 'inline') {
+                    inline[entry.level].push({ range, hoverMessage, renderOptions: { after: { contentText: `${entry.bytes} B` } } });
+                } else if (options.style === 'gutter') {
+                    gutter[entry.level].push({ range, hoverMessage });
                 }
-
-                buckets[levelOf(bytes)].push({
-                    range: editor.document.lineAt(line - 1).range,
-                    renderOptions: { after: { contentText: `${bytes} B` } },
-                    hoverMessage: costHover(image, loc, cost!),
-                });
             }
         }
 
-        this.levels.forEach((type, i) => editor.setDecorations(type, buckets[i]));
+        this.inline.forEach((type, i) => editor.setDecorations(type, inline[i]));
+        this.gutter.forEach((type, i) => editor.setDecorations(type, gutter[i]));
     }
 
     dispose(): void {
-        this.levels.forEach(type => type.dispose());
+        this.inline.forEach(type => type.dispose());
+        this.gutter.forEach(type => type.dispose());
     }
+}
+
+/**
+ * @brief Costs as editor inlay hints, so editor.inlayHints.enabled and its
+ * hold-to-show modes govern them. Costs above the top level use the type
+ * hint colour, the rest the parameter hint colour.
+ */
+export class CostInlayHints implements vscode.InlayHintsProvider {
+    private readonly change = new vscode.EventEmitter<void>();
+    readonly onDidChangeInlayHints = this.change.event;
+
+    constructor(
+        private readonly image: () => Image | undefined,
+        private readonly options: () => CostOptions,
+    ) {}
+
+    refresh(): void {
+        this.change.fire();
+    }
+
+    provideInlayHints(doc: vscode.TextDocument, range: vscode.Range): vscode.InlayHint[] {
+        const image = this.image();
+        const options = this.options();
+        const file = image && options.show && options.style === 'inlayHint' ? image.findFile(doc.uri.fsPath) : -1;
+        if (!image || file < 0) {
+            return [];
+        }
+
+        const hints: vscode.InlayHint[] = [];
+        for (const entry of costEntries(image, file, options.metric, doc.lineCount)) {
+            const line = entry.line - 1;
+            if (line < range.start.line || line > range.end.line) {
+                continue;
+            }
+            const kind = entry.level === LEVEL_LIMITS.length ? vscode.InlayHintKind.Type : vscode.InlayHintKind.Parameter;
+            const hint = new vscode.InlayHint(doc.lineAt(line).range.end, `${entry.bytes} B`, kind);
+            hint.paddingLeft = true;
+            hint.tooltip = costHover(image, entry.loc, entry.cost);
+            hints.push(hint);
+        }
+
+        return hints;
+    }
+}
+
+function gutterIcon(color: string): vscode.Uri {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect x="5" y="2" width="3" height="12" rx="1.5" fill="${color}"/></svg>`;
+    return vscode.Uri.parse(`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`);
 }
 
 function levelOf(bytes: number): number {

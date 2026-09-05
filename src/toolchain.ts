@@ -1,8 +1,9 @@
 /**
  * @brief Locates binutils for an ELF and runs them into an Image.
  *
- * objdump is chosen from the ELF machine type unless configured; nm and
- * c++filt are taken from beside it and are optional.
+ * objdump comes from the per-architecture setting, then the global setting,
+ * then built-in names for the ELF machine type; nm and c++filt are taken
+ * from beside it and are optional.
  */
 
 import { spawn } from 'child_process';
@@ -17,13 +18,53 @@ export interface Tools {
     cxxfilt?: string;
 }
 
-const OBJDUMP_BY_MACHINE: Record<number, string[]> = {
-    0x03: ['objdump'],
-    0x28: ['arm-none-eabi-objdump', 'arm-linux-gnueabihf-objdump', 'arm-linux-gnueabi-objdump'],
-    0x3e: ['objdump'],
-    0xb7: ['aarch64-none-elf-objdump', 'aarch64-linux-gnu-objdump'],
-    0xf3: ['riscv-none-elf-objdump', 'riscv64-unknown-elf-objdump', 'riscv32-unknown-elf-objdump', 'riscv64-linux-gnu-objdump'],
+/**
+ * @brief The objdump settings: one executable or prefix per architecture
+ * name, and one for everything else.
+ */
+export interface ToolSettings {
+    objdump?: string;
+    toolchains?: Record<string, string>;
+}
+
+interface Machine {
+    name: string;
+    objdump: string[];
+}
+
+const MACHINES: Record<number, Machine> = {
+    0x03: { name: 'i386', objdump: ['objdump'] },
+    0x04: { name: 'm68k', objdump: ['m68k-elf-objdump', 'm68k-linux-gnu-objdump'] },
+    0x08: { name: 'mips', objdump: ['mips-linux-gnu-objdump', 'mipsel-linux-gnu-objdump', 'mips-elf-objdump'] },
+    0x14: { name: 'powerpc', objdump: ['powerpc-eabi-objdump', 'powerpc-linux-gnu-objdump'] },
+    0x28: { name: 'arm', objdump: ['arm-none-eabi-objdump', 'arm-linux-gnueabihf-objdump', 'arm-linux-gnueabi-objdump'] },
+    0x3e: { name: 'x86_64', objdump: ['objdump'] },
+    0x53: { name: 'avr', objdump: ['avr-objdump'] },
+    0x5e: { name: 'xtensa', objdump: ['xtensa-esp32-elf-objdump', 'xtensa-esp32s3-elf-objdump', 'xtensa-lx106-elf-objdump'] },
+    0x69: { name: 'msp430', objdump: ['msp430-elf-objdump'] },
+    0xb7: { name: 'aarch64', objdump: ['aarch64-none-elf-objdump', 'aarch64-linux-gnu-objdump'] },
+    0xf3: { name: 'riscv', objdump: ['riscv-none-elf-objdump', 'riscv64-unknown-elf-objdump', 'riscv32-unknown-elf-objdump', 'riscv64-linux-gnu-objdump'] },
 };
+
+/**
+ * @brief Architecture name of an ELF machine type, the key used in
+ * istari.toolchains; unknown types read machine-0x<hex>.
+ */
+export function machineName(machine: number): string {
+    return MACHINES[machine]?.name ?? `machine-0x${machine.toString(16)}`;
+}
+
+/**
+ * @brief objdump candidates for a machine: configured ones first, then the
+ * built-in names. A configured value ending in a dash is a toolchain prefix.
+ */
+export function objdumpCandidates(machine: number, settings: ToolSettings): { configured: string[]; builtin: string[] } {
+    const configured = [settings.toolchains?.[machineName(machine)], settings.objdump]
+        .filter((value): value is string => !!value)
+        .map(value => value.endsWith('-') ? `${value}objdump` : value);
+
+    return { configured, builtin: MACHINES[machine]?.objdump ?? ['objdump'] };
+}
 
 /**
  * @brief e_machine of an ELF header.
@@ -44,27 +85,32 @@ export async function elfMachine(elfPath: string): Promise<number> {
     }
 }
 
-export async function resolveTools(elfPath: string, configured: string): Promise<Tools> {
+export async function resolveTools(elfPath: string, settings: ToolSettings): Promise<Tools> {
+    const machine = await elfMachine(elfPath);
+    const name = machineName(machine);
+    const { configured, builtin } = objdumpCandidates(machine, settings);
     let objdump: string | undefined;
 
-    if (configured) {
-        objdump = await usable(configured);
-        if (!objdump) {
-            throw new Error(`istari.objdump is ${configured}, which is not an executable on PATH`);
+    for (const candidate of configured) {
+        objdump = await usable(candidate);
+        if (objdump) {
+            break;
         }
-    } else {
-        const machine = await elfMachine(elfPath);
-        const candidates = OBJDUMP_BY_MACHINE[machine] ?? ['objdump'];
-        for (const candidate of candidates) {
-            objdump = await usable(candidate);
-            if (objdump) {
-                break;
-            }
+    }
+    if (!objdump && configured.length) {
+        throw new Error(`the configured objdump for ${name} is not executable (${configured.join(', ')}); `
+            + `check istari.toolchains.${name} or istari.objdump`);
+    }
+
+    for (const candidate of objdump ? [] : builtin) {
+        objdump = await usable(candidate);
+        if (objdump) {
+            break;
         }
-        if (!objdump) {
-            throw new Error(`no objdump for ELF machine 0x${machine.toString(16)} on PATH `
-                + `(tried ${candidates.join(', ')}); set istari.objdump`);
-        }
+    }
+    if (!objdump) {
+        throw new Error(`no objdump for ${name} on PATH (tried ${builtin.join(', ')}); `
+            + `set istari.toolchains.${name} or istari.objdump`);
     }
 
     return {

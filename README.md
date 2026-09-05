@@ -21,7 +21,8 @@ the linker settled, and puts the result next to your source:
 
 - Byte costs in the source. Every line that produced code shows how many
   bytes it is responsible for, inclusive of code inlined through it. Hover
-  for the exclusive count and the per-function split.
+  for the exclusive count and the per-function split. Ctrl+Alt+B hides and
+  shows them; as inlay hints they follow VS Code's hold-to-peek modes.
 - Cursor following. The editor holding the cursor leads: a source cursor
   marks the instructions it produced in every visible listing, a listing
   cursor marks the source line it came from.
@@ -42,9 +43,9 @@ code --install-extension istari-elf-0.1.0.vsix
 
 ## Requirements
 
-GNU binutils for the target on PATH: `arm-none-eabi-objdump` for ARM images,
-`riscv-none-elf-objdump` for RISC-V, `objdump` for the host. Set
-`istari.objdump` to use another. nm and c++filt are taken from beside it.
+GNU binutils for the target: `arm-none-eabi-objdump` for ARM images,
+`riscv-none-elf-objdump` for RISC-V, `objdump` for the host, found on PATH
+or named in `istari.toolchains`. nm and c++filt are taken from beside it.
 
 The ELF needs line tables (`-g` or better). Inline chains and inclusive costs
 need the inlining information GCC emits at `-g2` and above.
@@ -58,14 +59,18 @@ need the inlining information GCC emits at `-g2` and above.
 | Istari: Select ELF Image | | Pick among the workspace's .elf files; the status bar item does the same. |
 | Istari: Reload Image | | Re-read the current ELF. It also reloads by itself when the file changes. |
 | Istari: Open Instruction Cheat Sheet | | The instruction and register reference for the image's architecture, as a markdown preview. |
+| Istari: Toggle Byte Costs | Ctrl+Alt+B | Hide or show the per-line costs. |
 
 ## Settings
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `istari.image` | `""` | ELF to load. Empty: the single .elf in the workspace, or a pick when there are several. A pick is remembered per workspace. |
-| `istari.objdump` | `""` | objdump to run. Empty: chosen from the ELF machine type. |
-| `istari.costs` | `inclusive` | `inclusive`, `exclusive`, or `off`. |
+| `istari.toolchains` | `{}` | objdump per architecture, keyed by machine name (`arm`, `riscv`, `aarch64`, `x86_64`, ...). A value is an executable or a prefix ending in a dash, such as `/opt/gcc-arm/bin/arm-none-eabi-`. |
+| `istari.objdump` | `""` | objdump for architectures without an entry above. Empty: built-in names for the machine type. |
+| `istari.costs.show` | `true` | Show per-line byte costs. |
+| `istari.costs.metric` | `inclusive` | `inclusive` (with inlined code) or `exclusive` (the line's own instructions). |
+| `istari.costs.style` | `inline` | `inline` text coloured by size, `inlayHint` (obeys `editor.inlayHints.enabled`, so `offUnlessPressed` shows costs only while Ctrl+Alt is held), or a `gutter` bar with numbers on hover. |
 | `istari.listing.sourceText` | `true` | Append the source line text to listing markers. |
 
 ## Development

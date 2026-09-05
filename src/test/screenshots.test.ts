@@ -86,6 +86,27 @@ async function showAt(file: string, line: number, column: vscode.ViewColumn, cha
 	return editor;
 }
 
+// Extra frames outside the GIF: each cost style and the toggle, written to
+// an extra/ folder so the GIF glob does not pick them up.
+async function captureCostStyles(): Promise<void> {
+	const cfg = vscode.workspace.getConfiguration('istari');
+	fs.mkdirSync(path.join(OUT!, 'extra'), { recursive: true });
+	const editor = vscode.workspace.getConfiguration('editor');
+	for (const style of ['inlayHint', 'gutter']) {
+		await cfg.update('costs.style', style, vscode.ConfigurationTarget.Global);
+		await editor.update('glyphMargin', style === 'gutter', vscode.ConfigurationTarget.Global);
+		await wait(2000);
+		shot(`extra/costs-${style}`);
+	}
+	await editor.update('glyphMargin', false, vscode.ConfigurationTarget.Global);
+	await cfg.update('costs.style', 'inline', vscode.ConfigurationTarget.Global);
+	await vscode.commands.executeCommand('istari.toggleCosts');
+	await wait(1500);
+	shot('extra/costs-off');
+	await vscode.commands.executeCommand('istari.toggleCosts');
+	await wait(1500);
+}
+
 suite('README screenshots', function () {
 	this.timeout(600000);
 
@@ -113,6 +134,9 @@ suite('README screenshots', function () {
 		await showAt(path.join(folder, 'src', 'AppDrivers', 'Tpx2Row.cpp'), 244, vscode.ViewColumn.One);
 		await wait(2500);
 		shot('1-costs');
+		if (process.env.ISTARI_SHOTS_STYLES) {
+			await captureCostStyles();
+		}
 
 		// 2: the listing beside it, with the line's instructions marked
 		await vscode.commands.executeCommand('istari.showAssembly');

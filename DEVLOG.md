@@ -147,6 +147,20 @@ instance limit of 128 was exhausted by the desktop session and had to be
 raised before a second VS Code could start; hovers opened from the keyboard
 outlive focus changes and need an Escape keypress.
 
+### Second feedback round
+
+Costs were "annoying during work": always-on text after every line. They
+now have a toggle (Ctrl+Alt+B, flips istari.costs.show where it is set), a
+metric setting, and a style setting. The inlayHint style hands the decision
+to VS Code: editor.inlayHints.enabled offUnlessPressed shows them only while
+Ctrl+Alt is held, which is the mode that fits "hidden while typing, one
+chord to peek". The gutter style keeps a colour bar and moves the numbers
+to the hover.
+
+objdump per architecture: istari.toolchains maps a machine name to an
+executable or a prefix ending in a dash; the machine name comes from
+e_machine and is also what the error message names when nothing is found.
+
 ### Ideas, ranked
 
 1. Build diff. Two images (build vs build-base, which already exists in the

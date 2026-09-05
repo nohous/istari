@@ -101,6 +101,10 @@
       {
         "command": "istari.cheatSheet",
         "title": "Istari: Open Instruction Cheat Sheet"
+      },
+      {
+        "command": "istari.toggleCosts",
+        "title": "Istari: Toggle Byte Costs"
       }
     ],
     "keybindings": [
@@ -108,6 +112,10 @@
         "command": "istari.showAssembly",
         "key": "ctrl+alt+a",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "istari.toggleCosts",
+        "key": "ctrl+alt+b"
       }
     ],
     "menus": {
@@ -128,20 +136,51 @@
           "scope": "resource",
           "description": "ELF image to load, absolute or relative to the workspace folder. Empty: the single .elf of the workspace, or a pick when there are several."
         },
+        "istari.toolchains": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "markdownDescription": "objdump per architecture, keyed by the ELF machine name: `arm`, `aarch64`, `riscv`, `x86_64`, `i386`, `xtensa`, `avr`, `msp430`, `mips`, `powerpc`, `m68k`. A value is an objdump executable (a name on PATH or a path) or a toolchain prefix ending in a dash, for example `\"arm\": \"/opt/gcc-arm/bin/arm-none-eabi-\"`. nm and c++filt are taken from beside it."
+        },
         "istari.objdump": {
           "type": "string",
           "default": "",
-          "description": "objdump executable. Empty: chosen from the ELF machine type (arm-none-eabi-objdump, riscv-none-elf-objdump, objdump). nm and c++filt are taken from beside it."
+          "markdownDescription": "objdump for every architecture without an entry in `istari.toolchains`. Empty: built-in names for the ELF machine type (arm-none-eabi-objdump, riscv-none-elf-objdump, objdump, ...)."
         },
-        "istari.costs": {
+        "istari.costs.show": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the byte cost of every source line that produced code. \"Istari: Toggle Byte Costs\" flips this."
+        },
+        "istari.costs.metric": {
           "type": "string",
           "enum": [
             "inclusive",
-            "exclusive",
-            "off"
+            "exclusive"
           ],
           "default": "inclusive",
-          "description": "Byte cost shown after each source line: inclusive counts code inlined through the line, exclusive counts the line's own instructions."
+          "enumDescriptions": [
+            "Bytes of the line plus everything inlined through it.",
+            "Bytes of the line's own instructions only."
+          ],
+          "description": "Which byte count a source line shows."
+        },
+        "istari.costs.style": {
+          "type": "string",
+          "enum": [
+            "inline",
+            "inlayHint",
+            "gutter"
+          ],
+          "default": "inline",
+          "enumDescriptions": [
+            "Text after the line, coloured by magnitude.",
+            "An editor inlay hint, governed by editor.inlayHints.enabled; set that to offUnlessPressed to see costs only while holding Ctrl+Alt.",
+            "A coloured bar in the gutter, numbers on hover."
+          ],
+          "description": "How a line's byte cost is shown."
         },
         "istari.listing.sourceText": {
           "type": "boolean",

@@ -6,12 +6,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { CostDecorator, CostMode, Highlighter } from './decorations';
+import { CostDecorator, CostInlayHints, CostMetric, CostOptions, CostStyle, Highlighter } from './decorations';
 import { Follow } from './follow';
 import { Image } from './image';
 import { Navigator, OpenFunctionArgs, Session } from './navigate';
 import { ListingDefinitions, ListingHovers, ListingProvider, SCHEME } from './provider';
-import { loadImage, resolveTools } from './toolchain';
+import { ToolSettings, loadImage, resolveTools } from './toolchain';
 
 /**
  * @brief Surface returned from activate for tests and other extensions.
@@ -28,6 +28,23 @@ function config(): vscode.WorkspaceConfiguration {
     return vscode.workspace.getConfiguration('istari', vscode.workspace.workspaceFolders?.[0]?.uri ?? null);
 }
 
+function costOptions(): CostOptions {
+    const c = config();
+    return {
+        show: c.get<boolean>('costs.show', true),
+        metric: c.get<CostMetric>('costs.metric', 'inclusive'),
+        style: c.get<CostStyle>('costs.style', 'inline'),
+    };
+}
+
+function toolSettings(): ToolSettings {
+    const c = config();
+    return {
+        objdump: c.get<string>('objdump', '') || undefined,
+        toolchains: c.get<Record<string, string>>('toolchains', {}),
+    };
+}
+
 function clock(): string {
     return new Date().toLocaleTimeString('en-GB', { hour12: false });
 }
@@ -40,6 +57,7 @@ class Istari implements Session, vscode.Disposable {
     private watcher?: vscode.FileSystemWatcher;
     private reloadTimer?: NodeJS.Timeout;
     private readonly costs = new CostDecorator();
+    readonly inlayHints: CostInlayHints;
     private readonly follow: Follow;
     private readonly sources = new SourceCache();
     private readonly out = vscode.window.createOutputChannel('Istari');
@@ -53,6 +71,7 @@ class Istari implements Session, vscode.Disposable {
             displayPath: file => vscode.workspace.asRelativePath(file),
         }));
         this.follow = new Follow(() => this.current, this.provider, this.highlighter);
+        this.inlayHints = new CostInlayHints(() => this.current, costOptions);
 
         this.status.command = 'istari.selectImage';
         this.status.text = '$(circuit-board) Istari';
@@ -95,7 +114,7 @@ class Istari implements Session, vscode.Disposable {
         this.status.tooltip = `Istari: loading ${elfPath}`;
 
         this.loading = (async () => {
-            const tools = await resolveTools(elfPath, config().get<string>('objdump', ''));
+            const tools = await resolveTools(elfPath, toolSettings());
             this.log(`loading ${elfPath} with ${tools.objdump} (tools resolved in ${Date.now() - started} ms)`);
             return loadImage(elfPath, tools, phase => this.log(`  ${base}: ${phase}`));
         })();
@@ -217,17 +236,33 @@ class Istari implements Session, vscode.Disposable {
         this.watcher.onDidCreate(schedule);
     }
 
+    /**
+     * @brief Flips istari.costs.show where it is set, or in user settings.
+     */
+    async toggleCosts(): Promise<void> {
+        const c = config();
+        const info = c.inspect<boolean>('costs.show');
+        const target = info?.workspaceFolderValue !== undefined ? vscode.ConfigurationTarget.WorkspaceFolder
+            : info?.workspaceValue !== undefined ? vscode.ConfigurationTarget.Workspace
+            : vscode.ConfigurationTarget.Global;
+        const shown = c.get<boolean>('costs.show', true);
+
+        await c.update('costs.show', !shown, target);
+        vscode.window.setStatusBarMessage(`Istari: byte costs ${shown ? 'hidden' : 'shown'}`, 2000);
+    }
+
     private decorateAll(): void {
-        const mode = config().get<CostMode>('costs', 'inclusive');
+        const options = costOptions();
         for (const editor of vscode.window.visibleTextEditors) {
             if (editor.document.uri.scheme === 'file') {
-                this.costs.apply(editor, this.current, mode);
+                this.costs.apply(editor, this.current, options);
             }
         }
+        this.inlayHints.refresh();
     }
 
     private onConfig(e: vscode.ConfigurationChangeEvent): void {
-        if (e.affectsConfiguration('istari.image') || e.affectsConfiguration('istari.objdump')) {
+        if (e.affectsConfiguration('istari.image') || e.affectsConfiguration('istari.objdump') || e.affectsConfiguration('istari.toolchains')) {
             void this.context.workspaceState.update(STATE_IMAGE, undefined).then(() => this.autoload());
         }
         if (e.affectsConfiguration('istari.costs')) {
@@ -291,11 +326,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<Istari
         vscode.workspace.registerTextDocumentContentProvider(SCHEME, istari.provider),
         vscode.languages.registerDefinitionProvider({ scheme: SCHEME }, new ListingDefinitions(() => istari.image(), istari.provider)),
         vscode.languages.registerHoverProvider({ scheme: SCHEME }, new ListingHovers(() => istari.image(), istari.provider)),
+        vscode.languages.registerInlayHintsProvider({ scheme: 'file' }, istari.inlayHints),
         vscode.commands.registerCommand('istari.openFunction', (args?: OpenFunctionArgs) => navigator.openFunction(args)),
         vscode.commands.registerCommand('istari.showAssembly', () => navigator.showAssembly()),
         vscode.commands.registerCommand('istari.selectImage', () => istari.selectImage()),
         vscode.commands.registerCommand('istari.reload', () => istari.reload()),
         vscode.commands.registerCommand('istari.cheatSheet', () => navigator.cheatSheet()),
+        vscode.commands.registerCommand('istari.toggleCosts', () => istari.toggleCosts()),
     );
 
     void istari.autoload();

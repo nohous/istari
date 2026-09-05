@@ -5,7 +5,7 @@ import { Image } from '../image';
 import { ARM } from '../isa/arm';
 import { renderListing, shortName, targetAt } from '../listing';
 import { parseDisassembly, parseSymbolSizes } from '../objdump';
-import { loadImage, resolveTools } from '../toolchain';
+import { loadImage, machineName, objdumpCandidates, resolveTools } from '../toolchain';
 
 const SAMPLE = [
     '',
@@ -137,6 +137,18 @@ test('targetAt finds the branch target under the cursor', () => {
 const WPX_ELF = process.env.ISTARI_TEST_ELF
     ?? '/home/nohous/projects/advacam/src/WPX_CPU_APP-mc-devel/build/wpxTpx2_app1_0x08040000.elf';
 
+test('objdump candidates follow the per-architecture setting, the global one, then built-ins', () => {
+    assert.equal(machineName(0x28), 'arm');
+    assert.equal(machineName(0xf3), 'riscv');
+    assert.equal(machineName(0x1234), 'machine-0x1234');
+    const arm = objdumpCandidates(0x28, { toolchains: { arm: '/opt/gcc-arm/bin/arm-none-eabi-' }, objdump: 'objdump' });
+    assert.deepEqual(arm.configured, ['/opt/gcc-arm/bin/arm-none-eabi-objdump', 'objdump']);
+    assert.equal(arm.builtin[0], 'arm-none-eabi-objdump');
+    const riscv = objdumpCandidates(0xf3, { toolchains: { riscv: 'riscv64-unknown-elf-objdump' } });
+    assert.deepEqual(riscv.configured, ['riscv64-unknown-elf-objdump']);
+    assert.deepEqual(objdumpCandidates(0x1234, {}), { configured: [], builtin: ['objdump'] });
+});
+
 test('ARM mnemonics normalise to a table entry with suffix notes', () => {
     const b = ARM.instruction('bls.n')!;
     assert.equal(b.mnemonic, 'b');
@@ -175,7 +187,7 @@ test('ARM registers resolve by alias', () => {
 });
 
 test('every mnemonic of the WPX image has a cheat sheet entry', { skip: !fs.existsSync(WPX_ELF) && 'no WPX ELF on this machine' }, async () => {
-    const image = await loadImage(WPX_ELF, await resolveTools(WPX_ELF, ''));
+    const image = await loadImage(WPX_ELF, await resolveTools(WPX_ELF, {}));
     const missing = new Set<string>();
     for (const ins of image.instrs) {
         const mnemonic = ins.text.split(' ')[0];
@@ -189,7 +201,7 @@ test('every mnemonic of the WPX image has a cheat sheet entry', { skip: !fs.exis
 
 test('loads the WPX firmware image end to end', { skip: !fs.existsSync(WPX_ELF) && 'no WPX ELF on this machine' }, async () => {
     const started = Date.now();
-    const tools = await resolveTools(WPX_ELF, '');
+    const tools = await resolveTools(WPX_ELF, {});
     const image = await loadImage(WPX_ELF, tools);
     const elapsed = Date.now() - started;
 

@@ -23,6 +23,7 @@ export default defineConfig([
 			ISTARI_SHOTS_DIR: process.env.ISTARI_SHOTS_DIR,
 			ISTARI_SHOTS_WIDTH: process.env.ISTARI_SHOTS_WIDTH,
 			ISTARI_SHOTS_HEIGHT: process.env.ISTARI_SHOTS_HEIGHT,
+			ISTARI_SHOTS_STYLES: process.env.ISTARI_SHOTS_STYLES,
 		},
 		mocha: { timeout: 600000 },
 	},
