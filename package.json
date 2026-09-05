@@ -4,6 +4,27 @@
   "description": "Source-to-assembly navigation over a linked ELF: per-function listings with inline chains, per-line byte costs, cursor following both ways",
   "version": "0.1.0",
   "publisher": "nohous",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nohous/istari.git"
+  },
+  "homepage": "https://github.com/nohous/istari#readme",
+  "bugs": {
+    "url": "https://github.com/nohous/istari/issues"
+  },
+  "keywords": [
+    "elf",
+    "disassembly",
+    "objdump",
+    "arm",
+    "cortex-m",
+    "embedded",
+    "firmware",
+    "code size",
+    "inlining",
+    "dwarf"
+  ],
   "engines": {
     "vscode": "^1.96.0"
   },
