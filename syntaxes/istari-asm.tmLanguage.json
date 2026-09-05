@@ -1,0 +1,64 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Istari listing",
+    "scopeName": "source.istari-asm",
+    "patterns": [
+        {
+            "match": "^;;.*$",
+            "name": "comment.block.documentation.header.istari"
+        },
+        {
+            "begin": "^; ",
+            "end": "$",
+            "name": "meta.marker.istari",
+            "patterns": [
+                {
+                    "match": "\\|  .*$",
+                    "name": "comment.line.source.istari"
+                },
+                {
+                    "match": "[A-Za-z0-9_.+-]*:[0-9]+",
+                    "name": "entity.name.tag.location.istari"
+                },
+                {
+                    "match": " > ",
+                    "name": "keyword.operator.inline.istari"
+                },
+                {
+                    "match": "[^ >|]+",
+                    "name": "entity.name.function.istari"
+                }
+            ]
+        },
+        {
+            "begin": "^\\s+[0-9a-f]+:",
+            "beginCaptures": {
+                "0": { "name": "constant.numeric.address.istari" }
+            },
+            "end": "$",
+            "name": "meta.instruction.istari",
+            "patterns": [
+                {
+                    "match": "@.*$",
+                    "name": "comment.line.annotation.istari"
+                },
+                {
+                    "match": "(?<=:  )[A-Za-z][A-Za-z0-9._]*",
+                    "name": "keyword.mnemonic.istari"
+                },
+                {
+                    "match": "<[^<>]*(?:<[^<>]*>[^<>]*)*>",
+                    "name": "entity.name.function.target.istari"
+                },
+                {
+                    "match": "\\b(r1[0-5]|r[0-9]|sp|lr|pc|ip|fp|sl|sb|s[0-9]+|d[0-9]+|q[0-9]+|apsr|cpsr|xpsr|ipsr|epsr|primask|basepri|faultmask|control|msp|psp|fpscr|x[0-9]+|w[0-9]+|zero|ra|gp|tp|a[0-7]|t[0-6]|s1[01])\\b",
+                    "name": "variable.language.register.istari"
+                },
+                {
+                    "match": "#?-?0x[0-9a-fA-F]+|#-?[0-9]+|\\b[0-9a-f]{5,}\\b",
+                    "name": "constant.numeric.istari"
+                }
+            ]
+        }
+    ]
+}

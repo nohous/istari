@@ -1,0 +1,136 @@
+{
+  "name": "istari",
+  "displayName": "Istari",
+  "description": "Source-to-assembly navigation over a linked ELF: per-function listings with inline chains, per-line byte costs, cursor following both ways",
+  "version": "0.1.0",
+  "publisher": "nohous",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.elf"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "istari-asm",
+        "aliases": [
+          "Istari listing"
+        ],
+        "extensions": [
+          ".dis"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "istari-asm",
+        "scopeName": "source.istari-asm",
+        "path": "./syntaxes/istari-asm.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "istari.openFunction",
+        "title": "Istari: Open Function Listing"
+      },
+      {
+        "command": "istari.showAssembly",
+        "title": "Istari: Show Assembly / Source for Cursor"
+      },
+      {
+        "command": "istari.selectImage",
+        "title": "Istari: Select ELF Image"
+      },
+      {
+        "command": "istari.reload",
+        "title": "Istari: Reload Image"
+      },
+      {
+        "command": "istari.cheatSheet",
+        "title": "Istari: Open Instruction Cheat Sheet"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "istari.showAssembly",
+        "key": "ctrl+alt+a",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "istari.showAssembly",
+          "when": "editorLangId == cpp || editorLangId == c || editorLangId == istari-asm",
+          "group": "navigation@9"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Istari",
+      "properties": {
+        "istari.image": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "description": "ELF image to load, absolute or relative to the workspace folder. Empty: the single .elf of the workspace, or a pick when there are several."
+        },
+        "istari.objdump": {
+          "type": "string",
+          "default": "",
+          "description": "objdump executable. Empty: chosen from the ELF machine type (arm-none-eabi-objdump, riscv-none-elf-objdump, objdump). nm and c++filt are taken from beside it."
+        },
+        "istari.costs": {
+          "type": "string",
+          "enum": [
+            "inclusive",
+            "exclusive",
+            "off"
+          ],
+          "default": "inclusive",
+          "description": "Byte cost shown after each source line: inclusive counts code inlined through the line, exclusive counts the line's own instructions."
+        },
+        "istari.listing.sourceText": {
+          "type": "boolean",
+          "default": true,
+          "description": "Append the source line text to each marker in a listing."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "test:unit": "pnpm run compile-tests && node --test \"out/unit/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.96.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.17.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@10.18.0+sha512.e804f889f1cecc40d572db084eec3e4881739f8dec69c0ff10d2d1beff9a4e309383ba27b5b750059d7f4c149535b6cd0d2cb1ed3aeb739239a4284a68f40cfa"
+}

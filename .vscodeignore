@@ -1,0 +1,17 @@
+.vscode/**
+.vscode-test/**
+out/test/**
+out/unit/**
+node_modules/**
+src/**
+.gitignore
+.npmrc
+esbuild.js
+pnpm-lock.yaml
+pnpm-workspace.yaml
+DEVLOG.md
+**/tsconfig.json
+**/eslint.config.mjs
+**/*.map
+**/*.ts
+**/.vscode-test.*
