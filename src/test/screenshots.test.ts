@@ -99,7 +99,7 @@ suite('README screenshots', function () {
 	test('capture the feature frames', async () => {
 		const folder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 		assert.ok(folder);
-		const extension = vscode.extensions.getExtension<IstariApi>('nohous.istari');
+		const extension = vscode.extensions.getExtension<IstariApi>('nohous.istari-elf');
 		assert.ok(extension);
 		const api = await extension.activate();
 

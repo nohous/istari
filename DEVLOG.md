@@ -129,6 +129,13 @@ fall behind the code it is meant to explain.
 Keybinding is Ctrl+Alt+A; Ctrl+Shift+A collided with the user's vim plugin.
 The old ELF Source View extension was uninstalled.
 
+### Marketplace identity
+
+The Marketplace keeps bare extension names unique across publishers and
+pi314mm.istari already exists, so the package name is istari-elf; the id is
+nohous.istari-elf. Display name, commands, settings and the repository keep
+the plain name.
+
 ### README media
 
 The frames are captured, not staged: a mocha suite under the screenshots

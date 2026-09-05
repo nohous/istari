@@ -11,6 +11,7 @@ export default defineConfig([
 		label: 'integration',
 		files: 'out/test/extension.test.js',
 		workspaceFolder,
+		launchArgs: ['--ozone-platform=x11'],
 		mocha: { timeout: 120000 },
 	},
 	{

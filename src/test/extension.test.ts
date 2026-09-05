@@ -8,7 +8,7 @@ suite('Istari in the WPX workspace', () => {
 		const folder = vscode.workspace.workspaceFolders?.[0];
 		assert.ok(folder, 'a workspace folder is open');
 
-		const extension = vscode.extensions.getExtension<IstariApi>('nohous.istari');
+		const extension = vscode.extensions.getExtension<IstariApi>('nohous.istari-elf');
 		assert.ok(extension, 'extension is installed in the test host');
 		const api = await extension.activate();
 
